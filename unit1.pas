@@ -71,11 +71,16 @@ begin
 end;
 
 procedure TForm1.MenuItem5Click(Sender: TObject); // save as BMP  (!!!)
-var vB: Byte;
+var vB, r, g, b: Byte;
     vW: Word;
-    vI: Integer;
+    vI, i, j, line, counter: Integer;
     f: File;
+    clr: TColor;
 begin
+  counter := 0;
+  For i := 0 To Image1.Picture.Height - 1 Do
+    counter := counter + (4 - (Image1.Picture.Width mod 4));
+
   if SaveDialog1.Execute then
     begin
       NewFileName := SaveDialog1.FileName;
@@ -88,11 +93,13 @@ begin
   blocKWrite(f, vB, sizeof(vB));
   vB := ord('M');
   blocKWrite(f, vB, sizeof(vB));
-  vI := 14 + 40 + (Image1.Height * Image1.Width * 3);   //!!!
+  vI := 14 + 40 + (Image1.Picture.Height * Image1.Picture.Width * 3) + counter;   //!!!
   blocKWrite(f, vI, sizeof(vI));
   vW := word(0);
   blocKWrite(f, vW, sizeof(vW));
   blocKWrite(f, vW, sizeof(vW));
+  vI := 54;
+  blocKWrite(f, vI, sizeof(vI));
 
   // image header
   vI := 40;
@@ -103,9 +110,42 @@ begin
   blocKWrite(f, vI, sizeof(vI));
   vW := word(1);
   blocKWrite(f, vW, sizeof(vW));
+  vW := word(24);
+  blocKWrite(f, vW, sizeof(vW));
+  vI := 0;
+  blocKWrite(f, vI, sizeof(vI));
+  blocKWrite(f, vI, sizeof(vI));
+  blocKWrite(f, vI, sizeof(vI));
+  blocKWrite(f, vI, sizeof(vI));
+  blocKWrite(f, vI, sizeof(vI));
+  blocKWrite(f, vI, sizeof(vI));
 
   // pixel data
-
+  vB := 0;
+  For j := Image1.Picture.Height - 1 DownTo 0 Do
+    begin
+      For i := 0 To Image1.Picture.Width - 1 Do
+        begin
+          clr := Image1.Picture.Bitmap.Canvas.Pixels[i, j];
+          r := Red(clr);
+          g := Green(clr);
+          b := Blue(clr);
+          blocKWrite(f, b, sizeof(b));
+          blocKWrite(f, g, sizeof(g));
+          blocKWrite(f, r, sizeof(r));
+        end;
+      line := Image1.Picture.Width * 3;
+      If line mod 4 <> 0 Then
+        begin
+          Repeat
+            begin
+              blockWrite(f, vB, sizeof(vB));
+              line := line + 1;
+            end;
+          until line mod 4 = 0;
+          line := Image1.Picture.Width * 3;
+        end;
+    end;
 
   closeFile(f);
 end;
@@ -128,6 +168,8 @@ var i, j: integer;
     brightness: real;
     clr: TColor;
 begin
+  pixels := 0;
+  ProgressBar1.Position := 0;
   Form2.ShowModal; // shows track bar
   brightness := bP / 10; // brightness percentage
   for i := 0 to Image1.Picture.Width do
@@ -148,6 +190,8 @@ begin
             else
               b := round( (Blue(clr)) + (Blue(clr) * brightness) );
           Image1.Picture.Bitmap.Canvas.Pixels[i, j] := RGBToColor(r, g, b);
+          pixels := pixels + 1;
+          ProgressBar1.Position := round((pixels / (Image1.Picture.Width * Image1.Picture.Height)) * 100);
         end;
       Application.ProcessMessages;
     end;
@@ -176,12 +220,16 @@ procedure TForm1.MenuItem9Click(Sender: TObject); // green channel
 var i, j: integer;
     g: byte;
 begin
+  pixels := 0;
+  ProgressBar1.Position := 0;
   for i := 0 to Image1.Picture.Width do
     begin
       for j := 0 to Image1.Picture.Height do
         begin
           g := Green(Image1.Picture.Bitmap.Canvas.Pixels[i, j]);
           Image1.Picture.Bitmap.Canvas.Pixels[i, j] := RGBToColor(0, g, 0);
+          pixels := pixels + 1;
+          ProgressBar1.Position := round((pixels / (Image1.Picture.Width * Image1.Picture.Height)) * 100);
         end;
       Application.ProcessMessages;
     end;
@@ -191,12 +239,16 @@ procedure TForm1.MenuItem10Click(Sender: TObject); // blue channel
 var i, j: integer;
     b: byte;
 begin
+  pixels := 0;
+  ProgressBar1.Position := 0;
   for i := 0 to Image1.Picture.Width do
     begin
       for j := 0 to Image1.Picture.Height do
         begin
           b := Blue(Image1.Picture.Bitmap.Canvas.Pixels[i, j]);
           Image1.Picture.Bitmap.Canvas.Pixels[i, j] := RGBToColor(0, 0, b);
+          pixels := pixels + 1;
+          ProgressBar1.Position := round((pixels / (Image1.Picture.Width * Image1.Picture.Height)) * 100);
         end;
       Application.ProcessMessages;
     end;
@@ -206,6 +258,8 @@ procedure TForm1.MenuItem11Click(Sender: TObject); // gray scale
 var i, j: integer;
     r, g, b, y: byte;
 begin
+  pixels := 0;
+  ProgressBar1.Position := 0;
   for i := 0 to Image1.Picture.Width do
     begin
       for j := 0 to Image1.Picture.Height do
@@ -215,6 +269,8 @@ begin
           b := Blue(Image1.Picture.Bitmap.Canvas.Pixels[i, j]);
           y := round((0.2126*r) + (0.7152*g) + (0.0722*b));
           Image1.Picture.Bitmap.Canvas.Pixels[i, j] := RGBToColor(y, y, y);
+          pixels := pixels + 1;
+          ProgressBar1.Position := round((pixels / (Image1.Picture.Width * Image1.Picture.Height)) * 100);
         end;
       Application.ProcessMessages;
     end;
@@ -224,6 +280,8 @@ procedure TForm1.MenuItem12Click(Sender: TObject); // negative
 var i, j: integer;
     r, g, b: byte;
 begin
+  pixels := 0;
+  ProgressBar1.Position := 0;
   for i := 0 to Image1.Picture.Width do
     begin
       for j := 0 to Image1.Picture.Height do
@@ -232,6 +290,8 @@ begin
           g := Green(Image1.Picture.Bitmap.Canvas.Pixels[i, j]);
           b := Blue(Image1.Picture.Bitmap.Canvas.Pixels[i, j]);
           Image1.Picture.Bitmap.Canvas.Pixels[i, j] := RGBToColor(255-r, 255-g, 255-b);
+          pixels := pixels + 1;
+          ProgressBar1.Position := round((pixels / (Image1.Picture.Width * Image1.Picture.Height)) * 100);
         end;
       Application.ProcessMessages;
     end;
@@ -242,6 +302,8 @@ var i, j, x, y, sR, sG, sB: integer;
     r, g, b: byte;
     backup: TImage;
 begin
+  pixels := 0;
+  ProgressBar1.Position := 0;
   backup := Image1;
   sR := 0;
   sG := 0;
@@ -266,6 +328,8 @@ begin
           sG := 0;
           sB := 0;
           Image1.Picture.Bitmap.Canvas.Pixels[i, j] := RGBToColor(r, g, b);
+          pixels := pixels + 1;
+          ProgressBar1.Position := round((pixels / (Image1.Picture.Width * Image1.Picture.Height)) * 100);
         end;
       Application.ProcessMessages;
     end;

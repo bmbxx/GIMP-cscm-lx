@@ -1,10 +1,10 @@
 object Form2: TForm2
   Left = 1427
-  Height = 91
+  Height = 108
   Top = 197
   Width = 418
   Caption = 'Brightness Effect'
-  ClientHeight = 91
+  ClientHeight = 108
   ClientWidth = 418
   Font.CharSet = ANSI_CHARSET
   Font.Height = -16
@@ -28,7 +28,7 @@ object Form2: TForm2
   end
   object TrackBar1: TTrackBar
     Left = 16
-    Height = 25
+    Height = 46
     Top = 48
     Width = 340
     OnChange = TrackBar1Change
@@ -38,7 +38,7 @@ object Form2: TForm2
   object Button1: TButton
     Left = 360
     Height = 25
-    Top = 48
+    Top = 69
     Width = 50
     Caption = 'Ok'
     Font.CharSet = ANSI_CHARSET
